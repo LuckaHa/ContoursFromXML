@@ -1,5 +1,6 @@
 import cv2 as cv
 import numpy as np
+import os
 import xml.etree.ElementTree as ET
 
 def convertTo8b(filename):
@@ -65,9 +66,17 @@ def makeContours(folder, filename, u, v, min_area, max_area, min_circ):
             contours_circ.append(contour)
     
 
-    drawContours(contours, folder+'/'+'cont_all.png')
-    drawContours(contours_area, folder+'/'+'cont_area.png')
-    drawContours(contours_circ, folder+'/'+'cont_circ.png')
+    drawContours(contours, folder + '/' + str(v) + ',' + str(u) + 'cont_all.png')
+    drawContours(contours_area, folder + '/' + str(v) + ',' + str(u) + 'cont_area.png')
+    drawContours(contours_circ, folder + '/' + str(v) + ',' + str(u) + 'cont_circ.png')
 
-makeContours('c01', '0,1.txt', 1, 0, 100, 300, 10)
-makeContours('c01', '0,2.txt', 2, 0, 100, 300, 10)
+#makeContours('c01', '0,1.txt', 1, 0, 100, 300, 10)
+
+def readXMLfiles(folder):
+    for filename in os.listdir(folder):
+        s1 = filename.split('.')
+        if s1[1] == 'txt':
+            s2 = s1[0].split(',')
+            makeContours(folder, filename, int(s2[1]), int(s2[0]), 100, 300, 10)
+
+readXMLfiles('c01')

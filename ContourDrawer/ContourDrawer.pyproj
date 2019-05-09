@@ -22,9 +22,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ContourDrawer.py" />
-    <Compile Include="convert_to_8b.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="module1.py">
       <SubType>Code</SubType>
     </Compile>
