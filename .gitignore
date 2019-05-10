@@ -3,7 +3,6 @@
 
 # ignore data directory
 data/
-Unet_NC/model
 
 # User-specific files
 *.suo

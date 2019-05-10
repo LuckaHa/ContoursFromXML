@@ -1,48 +1,43 @@
 import cv2 as cv
 import numpy as np
 import os
+import shutil
 import xml.etree.ElementTree as ET
 
-def convertTo8b(filename):
-    img = cv.imread(filename)
-    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    cv.imwrite(filename,gray)
+idx = 0
+
+'''
+Pre funkcnost programu musia byt subory ulozene podla nasledujucej struktury.
+1. Vsetky mensie obrazky a kontury patriace 1 obrazku su ulozene v osobitnom priecinku.
+2. Tieto priecinky su ocislovane 0,1,2,...
+3. V kazdom z tychto priecinkov su obrazky a .txt subory pomenovane 'a,b'
+    a - suradnica y v ramci velkeho obrazka
+    b - suradnica x v ramci velkeho obrazka
+    Napr. 0,1.txt je XML subor s konturami k obrazku 0,1.img
+Obrazky buniek budu ulozene do data/train/image.
+Obrazky kontur budu ulozene do data/train/label.
+Treningove obrazky budu ulozene do data/test 
+'''
 
 # DRAW CONTOURS
 def drawContours(contours, filename):
-    # white blank image
-    cont_img = 255 * np.ones(shape=[512, 512, 3], dtype=np.uint8)
-
+    cont_img = 255 * np.ones(shape=[512, 512, 3], dtype=np.uint8) # white blank image
     for cnt in contours:
-        cv.drawContours(cont_img, [cnt], 0, (0,0,0), 1)
-    
-    cv.imshow('contours',cont_img)
-    cv.waitKey(0)
+        cv.drawContours(cont_img, [cnt], 0, (0,0,0), 1)    
     cv.imwrite(filename, cont_img)
-    convertTo8b(filename)
 
 # u,v - poloha miniobrazka vramci obrazka
-# od x,y treba odcitat okraje edge_points a u,v
-def makeContours(folder, filename, u, v, min_area, max_area, min_circ):
-    # READ XML & SAVE CONTOURS
-    root = ET.parse(folder+'/'+filename).getroot()
-
-    ## hranicne body
-    eX = eY = 30
-    #edge_x = []
-    #edge_y = []
-    #i = 0
-    #for point in root.findall('AOIs/AOI/Point'):
-    #    x = int(point.get('x'))
-    #    y = int(point.get('y'))
-    #    if i < 2:
-    #        edge_x.append(x)
-    #    if i == 1 or i == 2:
-    #        edge_x.append(y)
+# od x,y treba odcitat okraje eX,eY a u,v
+def makeContours(folder, filename, v, u, min_area, max_area, min_circ):
+    global idx
+    eX = eY = 30 # hranicne body
 
     contours = []
     contours_area = []
     contours_circ = []
+
+    # READ XML & SAVE CONTOURS
+    root = ET.parse(folder+'/'+filename).getroot()
     for cont in root.findall('Contours/Contour'):
         contour = []
         for point in cont.findall('Point'):
@@ -51,32 +46,64 @@ def makeContours(folder, filename, u, v, min_area, max_area, min_circ):
             contour.append([x,y])
         contour = np.array(contour, dtype=np.int32)
         contours.append(contour) # add to all contours
-        print(contour)
 
         # filter according to area
         area = cv.contourArea(contour)
         if area > min_area and area < max_area:
-            #print(area)
             contours_area.append(contour)
 
         # filter according to circularity
         circ = cv.approxPolyDP(contour,0.01*cv.arcLength(contour,True),True)
         if len(circ) > min_circ:
-            #print(circ)
             contours_circ.append(contour)
-    
+            
+    drawContours(contours, 'data/train/label/' + str(idx) + '.png')
+    drawContours(contours_area, 'data/train/label_area/' + str(idx) + '.png')
+    drawContours(contours_circ, 'data/train/label_circ/' + str(idx) + '.png')    
 
-    drawContours(contours, folder + '/' + str(v) + ',' + str(u) + 'cont_all.png')
-    drawContours(contours_area, folder + '/' + str(v) + ',' + str(u) + 'cont_area.png')
-    drawContours(contours_circ, folder + '/' + str(v) + ',' + str(u) + 'cont_circ.png')
-
-#makeContours('c01', '0,1.txt', 1, 0, 100, 300, 10)
 
 def readXMLfiles(folder):
+    global idx
     for filename in os.listdir(folder):
+        # subory cita v abecednom poradi, tj: 0,1.img, 0,1.txt, 0,2.img, 0,2.txt ...
         s1 = filename.split('.')
-        if s1[1] == 'txt':
+        if s1[1] == 'png':
+            # subor obrazku - ulozime ho do image priecinku pod nazvom idx
+            shutil.copyfile(folder + '/' + filename, 'data/train/image/' + str(idx) + '.png')
+        else:
+            # subor s konturami - vytvoreny obrazok s konturami ulozime do label priecinku pod nazvom idx
             s2 = s1[0].split(',')
-            makeContours(folder, filename, int(s2[1]), int(s2[0]), 100, 300, 10)
+            makeContours(folder, filename, int(s2[0]), int(s2[1]), 100, 300, 10)
+            idx += 1
 
-readXMLfiles('c01')
+
+# PRIPRAVIT STRUKTURU PRIECINKOV
+def createFolders():
+    os.makedirs('data/train/image')
+    os.mkdir('data/train/label')
+    os.mkdir('data/train/label_area')
+    os.mkdir('data/train/label_circ')
+    os.mkdir('data/test')
+
+def moveTestImages():
+    for filename in os.listdir('test'):
+        shutil.copyfile('test/' + filename, 'data/test/' + filename)
+
+def convertTo8b(folder):
+    for filename in os.listdir(folder):
+        img = cv.imread(folder+'/'+filename)
+        gray=cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        cv.imwrite(folder+'/'+filename,gray)
+
+# VYTVORIT OBRAZKY BUNIEK A KONTUR
+createFolders
+for folder in range (6):
+    readXMLfiles(str(folder)) # priecinky su nazvane 0,...5
+moveTestImages()
+
+# previest obrazky na ciernobiele 8b
+convertTo8b('data/train/image')
+convertTo8b('data/train/label')
+convertTo8b('data/train/label_area')
+convertTo8b('data/train/label_circ')
+convertTo8b('data/test')
