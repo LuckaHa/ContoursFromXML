@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>0b194587-3ca0-491b-b107-05493d4104d7</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>ContourDrawer.py</StartupFile>
+    <StartupFile>thresholding.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,6 +22,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ContourDrawer.py" />
+    <Compile Include="thresholding.py" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

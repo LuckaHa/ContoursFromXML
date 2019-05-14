@@ -3,6 +3,10 @@
 
 # ignore data directory
 data/
+data - 0, 100, 0.9/
+data - 100, 300, 0.7/
+data - 200, 1000, 0.8/
+predictedAll/
 
 # User-specific files
 *.suo
